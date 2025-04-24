@@ -5,10 +5,9 @@
 
 namespace mylib::crypto::argon2 {
 
-// Объявляем структуру, которую мы спрятали в .hpp
 using ::Argon2_Context;
 
-// Функции хэширования
+
 int hash_argon2i(void* out, size_t outlen,
                  const void* in, size_t inlen,
                  const void* salt, size_t saltlen,
@@ -23,7 +22,6 @@ int hash_argon2d(void* out, size_t outlen,
     return ::hash_argon2d(out, outlen, in, inlen, salt, saltlen, t_cost, m_cost);
 }
 
-// Работа с контекстом
 int Argon2i(Argon2_Context* context) {
     return ::Argon2i(context);
 }

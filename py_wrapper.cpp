@@ -5,12 +5,16 @@
 #include "include/argon2_wrapper.hpp"
 #include "include/Argon2Hasher.hpp"
 #include "ed25519_wrapper.hpp"
+#include "include/shsSHA512.hpp"  // Добавляем заголовок SHA512
+#include "include/shsBlake2.hpp"
 
 namespace py = pybind11;
 
 void bind_aes(py::module_& m);
 void bind_argon2(py::module_& m);
 void bind_ed25519(py::module_& m);
+void bind_sha512(py::module_& m);  // Прототип для SHA512
+void bind_blake2(py::module_& m);
 
 
 PYBIND11_MODULE(ShSlibPy, m) {
@@ -28,6 +32,8 @@ PYBIND11_MODULE(ShSlibPy, m) {
     bind_aes(m);
     bind_argon2(m);
     bind_ed25519(m);
+    bind_sha512(m);  // Добавляем привязки для SHA512
+    bind_blake2(m);
 
 }
 
@@ -180,4 +186,164 @@ void bind_argon2(py::module_& m) {
              "    out_len: length of the output hash (default: 32)\n"
              "Returns:\n"
              "    True if password matches, False otherwise");
+}
+
+void bind_sha512(py::module_& m) {
+    m.def("sha512_hash", 
+        [](const std::string& data) {
+            return shsSHA512::hash(data);
+        },
+        py::arg("data"),
+        "Compute SHA512 hash of input data\n"
+        "Args:\n"
+        "    data: input string to hash\n"
+        "Returns:\n"
+        "    SHA512 hash as bytes");
+
+    m.def("sha512_hash_bytes", 
+        [](const std::vector<uint8_t>& data) {
+            return shsSHA512::hash(data);
+        },
+        py::arg("data"),
+        "Compute SHA512 hash of binary data\n"
+        "Args:\n"
+        "    data: input bytes to hash\n"
+        "Returns:\n"
+        "    SHA512 hash as bytes");
+
+    py::class_<shsSHA512>(m, "SHA512")
+        .def(py::init<>(), "Initialize SHA512 hasher")
+        .def("update", 
+            [](shsSHA512& hasher, const std::string& data) {
+                hasher.update(data);
+            },
+            py::arg("data"),
+            "Update hash with string data")
+        .def("update_bytes", 
+            [](shsSHA512& hasher, const std::vector<uint8_t>& data) {
+                hasher.update(data);
+            },
+            py::arg("data"),
+            "Update hash with binary data")
+        .def("finalize", 
+            [](shsSHA512& hasher) {
+                return hasher.finalize();
+            },
+            "Finalize and return hash\n"
+            "Returns:\n"
+            "    SHA512 hash as bytes");
+}
+
+
+void bind_blake2(py::module_& m) {
+    // Простые функции хеширования
+    m.def("blake2b_hash", 
+        [](const std::string& data, size_t outlen) {
+            return shsBlake2::hash(data, outlen);
+        },
+        py::arg("data"),
+        py::arg("outlen") = shsBlake2::MAX_OUTPUT_SIZE,
+        "Compute Blake2b hash of input data\n"
+        "Args:\n"
+        "    data: input string to hash\n"
+        "    outlen: output length in bytes (default: 64)\n"
+        "Returns:\n"
+        "    Blake2b hash as bytes");
+
+    m.def("blake2b_hash_bytes", 
+        [](const std::vector<uint8_t>& data, size_t outlen) {
+            return shsBlake2::hash(data, outlen);
+        },
+        py::arg("data"),
+        py::arg("outlen") = shsBlake2::MAX_OUTPUT_SIZE,
+        "Compute Blake2b hash of binary data\n"
+        "Args:\n"
+        "    data: input bytes to hash\n"
+        "    outlen: output length in bytes (default: 64)\n"
+        "Returns:\n"
+        "    Blake2b hash as bytes");
+
+    // Функции с ключом
+    m.def("blake2b_hash_keyed", 
+        [](const std::string& data, const py::bytes& key_bytes, size_t outlen) {
+            std::string key_str = key_bytes;
+            std::vector<uint8_t> key(key_str.begin(), key_str.end());
+            std::vector<uint8_t> data_vec(data.begin(), data.end());
+            return shsBlake2::hash_keyed(data_vec, key, outlen);
+        },
+        py::arg("data"),
+        py::arg("key"),
+        py::arg("outlen") = shsBlake2::MAX_OUTPUT_SIZE,
+        "Compute keyed Blake2b hash\n"
+        "Args:\n"
+        "    data: input string to hash\n"
+        "    key: secret key as bytes\n"
+        "    outlen: output length in bytes (default: 64)\n"
+        "Returns:\n"
+        "    Blake2b hash as list of integers");
+
+    m.def("blake2b_hash_keyed_bytes", 
+        [](const py::bytes& data_bytes, const py::bytes& key_bytes, size_t outlen) {
+            std::string data_str = data_bytes;
+            std::vector<uint8_t> data(data_str.begin(), data_str.end());
+
+            std::string key_str = key_bytes;
+            std::vector<uint8_t> key(key_str.begin(), key_str.end());
+
+            return shsBlake2::hash_keyed(data, key, outlen);
+        },
+        py::arg("data"),
+        py::arg("key"),
+        py::arg("outlen") = shsBlake2::MAX_OUTPUT_SIZE,
+        "Compute keyed Blake2b hash of binary data\n"
+        "Args:\n"
+        "    data: input bytes to hash\n"
+        "    key: secret key as bytes\n"
+        "    outlen: output length in bytes (default: 64)\n"
+        "Returns:\n"
+        "    Blake2b hash as list of integers");
+
+    // Класс для инкрементального хеширования
+    py::class_<shsBlake2>(m, "Blake2b")
+        .def(py::init<size_t>(), 
+            py::arg("outlen") = shsBlake2::MAX_OUTPUT_SIZE,
+            "Initialize Blake2b hasher\n"
+            "Args:\n"
+            "    outlen: output length in bytes (default: 64)")
+
+        .def(py::init([](const py::bytes& key_bytes, size_t outlen) {
+            std::string key_str = key_bytes;
+            std::vector<uint8_t> key(key_str.begin(), key_str.end());
+            return new shsBlake2(key, outlen);
+        }),
+            py::arg("key"),
+            py::arg("outlen") = shsBlake2::MAX_OUTPUT_SIZE,
+            "Initialize Blake2b hasher with key\n"
+            "Args:\n"
+            "    key: secret key as bytes\n"
+            "    outlen: output length in bytes (default: 64)")
+
+        .def("update", 
+            [](shsBlake2& hasher, const std::string& data) {
+                std::vector<uint8_t> data_vec(data.begin(), data.end());
+                hasher.update(data_vec);
+            },
+            py::arg("data"),
+            "Update hash with string data")
+
+        .def("update_bytes", 
+            [](shsBlake2& hasher, const std::vector<uint8_t>& data) {
+                hasher.update(data);
+            },
+            py::arg("data"),
+            "Update hash with binary data")
+
+        .def("finalize", 
+            [](shsBlake2& hasher) {
+                return hasher.finalize();
+            },
+            "Finalize and return hash\n"
+            "Returns:\n"
+            "    Blake2b hash as bytes");  
+        
 }

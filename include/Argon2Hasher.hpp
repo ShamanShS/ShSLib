@@ -33,7 +33,7 @@ public:
      */
     static bool verifyPassword(
         const std::string& password,
-        const std::string& stored, // строка "salt$hash"
+        const std::string& stored, 
         unsigned int t_cost = 3,
         unsigned int m_cost = 1 << 12,
         size_t out_len = 32
@@ -44,8 +44,17 @@ public:
         return constantTimeCompare(computed_hash, expected_hash);
     }
 
+    static std::pair<std::string, std::string> splitSaltAndHash(const std::string& stored) {
+        auto pos = stored.find('$');
+        if (pos == std::string::npos) {
+            throw std::invalid_argument("Invalid stored format: missing separator '$'");
+        }
+        std::string salt = stored.substr(0, pos);
+        std::string hash = stored.substr(pos + 1);
+        return {salt, hash};
+    }
+
 private:
-    // Вспомогательные функции
     static std::vector<uint8_t> hashPassword(
         const std::string& password,
         const std::string& salt,
@@ -119,15 +128,7 @@ private:
         return result == 0;
     }
 
-    static std::pair<std::string, std::string> splitSaltAndHash(const std::string& stored) {
-        auto pos = stored.find('$');
-        if (pos == std::string::npos) {
-            throw std::invalid_argument("Invalid stored format: missing separator '$'");
-        }
-        std::string salt = stored.substr(0, pos);
-        std::string hash = stored.substr(pos + 1);
-        return {salt, hash};
-    }
+
 };
 
 } // namespace mylib::crypto
