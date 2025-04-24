@@ -4,30 +4,30 @@ project(ShSlibProject)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# === Опции сборки ===
+
 option(BUILD_PYTHON_MODULE "Build Python bindings" ON)
 option(BUILD_CPP_LIBRARY "Build C++ library" ON)
 option(ENABLE_COVERAGE "Enable code coverage reporting" OFF)  # Новая опция для покрытия
 
-# === Общие настройки ===
+
 include_directories(include)
 
-# === Настройки покрытия кода ===
+
 if(ENABLE_COVERAGE)
     message(STATUS "Code coverage enabled")
     add_compile_options(-fprofile-arcs -ftest-coverage)
     add_link_options(--coverage)
     
-    # Поиск необходимых инструментов
+
     find_program(LCOV_PATH lcov)
     find_program(GENHTML_PATH genhtml)
     find_program(GCOVR_PATH gcovr)
 endif()
 
-# === Fetch pybind11 ===
+
 include(FetchContent)
 
-# === Сборка C++ библиотеки ===
+
 if (BUILD_CPP_LIBRARY)
     add_library(ShSlib SHARED
         src/aes.cpp
@@ -66,7 +66,7 @@ if (BUILD_CPP_LIBRARY)
     )
 endif()
 
-# === Сборка Python-модуля ===
+
 if (BUILD_PYTHON_MODULE)
     FetchContent_Declare(
         pybind11
@@ -129,7 +129,7 @@ if (BUILD_PYTHON_MODULE)
     endif()
 endif()
 
-# === Тестирование с Google Test ===
+
 include(FetchContent)
 
 FetchContent_Declare(
@@ -142,7 +142,7 @@ FetchContent_MakeAvailable(googletest)
 
 enable_testing()
 
-# === Тест AES ===
+
 add_executable(test_aes tests/test_aes.cpp)
 target_include_directories(test_aes PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -150,7 +150,7 @@ target_include_directories(test_aes PRIVATE
 target_link_libraries(test_aes PRIVATE ShSlib gtest gtest_main)
 add_test(NAME AES_Tests COMMAND test_aes)
 
-# === Тест Argon2 ===
+
 add_executable(test_argon2 tests/test_argon2.cpp)
 target_include_directories(test_argon2 PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -160,7 +160,7 @@ target_link_libraries(test_argon2 PRIVATE ShSlib gtest gtest_main)
 add_test(NAME Argon2_Tests COMMAND test_argon2)
 
 
-# === Тест ed25519 ===
+
 add_executable(test_ed25519 tests/test_ed25519.cpp)
 target_include_directories(test_ed25519 PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -170,7 +170,7 @@ target_link_libraries(test_ed25519 PRIVATE ShSlib gtest gtest_main)
 add_test(NAME Ed25519_Tests COMMAND test_ed25519)
 
 
-# === Тест Blake2 ===
+
 add_executable(test_blake2 tests/test_blake2b.cpp)
 target_include_directories(test_blake2 PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -180,7 +180,7 @@ target_link_libraries(test_blake2 PRIVATE ShSlib gtest gtest_main)
 add_test(NAME Blake2_Tests COMMAND test_blake2)
 
 
-# === Тест SHA512 ===
+
 add_executable(test_sha512 tests/test_sha512.cpp)
 target_include_directories(test_sha512 PRIVATE
  ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -189,7 +189,7 @@ target_include_directories(test_sha512 PRIVATE
 target_link_libraries(test_sha512 PRIVATE ShSlib gtest gtest_main)
 add_test(NAME SHA512_Tests COMMAND test_sha512)
 
-# === Генерация отчета о покрытии ===
+
 if(ENABLE_COVERAGE)
     if(LCOV_PATH AND GENHTML_PATH)
         add_custom_target(coverage
