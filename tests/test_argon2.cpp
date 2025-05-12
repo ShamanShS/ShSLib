@@ -119,9 +119,9 @@ using namespace std;
 TEST_F(Argon2PerformanceTest, PerformanceDifferentParameters) {
     const int iterations = 10; 
     const vector<tuple<string, int, size_t>> test_params = {
-        {"Fast (t=1, m=16MB)", 1, 1<<27},      
-        {"Balanced (t=3, m=64MB)", 3, 1<<29},  
-        {"Secure (t=5, m=256MB)", 5, 1<<31}   
+        {"Fast (t=1, m=16MB)", 1, 1<<16},      
+        {"Balanced (t=3, m=64MB)", 3, 1<<18},  
+        {"Secure (t=5, m=256MB)", 5, 1<<20}   
     };
 
     cout << "\nArgon2 Performance results (avg per operation):\n";

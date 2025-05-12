@@ -347,3 +347,4 @@ void bind_blake2(py::module_& m) {
             "    Blake2b hash as bytes");  
         
 }
+
